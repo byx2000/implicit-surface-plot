@@ -2,6 +2,8 @@
 
 Based on interval subdivision algorithm and Marching Cubes algorithm.
 
+[Online Demo](https://byx2000.github.io/implicit-surface-plot/)
+
 $(\sqrt{x^2 + y^2} - 2)^2 + z^2 - 1=0$
 
 ![](./img/1.png)
