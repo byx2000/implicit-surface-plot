@@ -2,6 +2,20 @@
   <div class="container">
     <div ref="graphContainer"></div>
     <div>
+      <div>
+        <input type="checkbox" id="showWire" v-model="showWire">
+        <label for="showWire">显示网格</label>
+      </div>
+      <div>
+        <label for="subdivisionLevel">细分等级：</label>
+        <input type="range" id="subdivisionLevel" min="4" max="8" v-model="subdivisionLevel">
+        <span>{{ subdivisionLevel }}</span>
+      </div>
+      <div>
+        <label for="color">颜色：</label>
+        <input type="color" id="color" v-model="color">
+      </div>
+      <hr/>
       <div v-for="{name}, index in surfaces">
         <input type="radio" :id="name" name="surface" :value="index" v-model="selectedSurfaceIndex">
         <label :for="name">{{ name }}</label>
@@ -115,19 +129,22 @@ const surfaces = [
 ]
 
 const selectedSurfaceIndex = ref(0)
+const showWire = ref(true)
+const subdivisionLevel = ref(6)
+const color = ref('#2d70b3')
 
-function createScene(expr) {
+function createScene(expr, showWire, subdivisionLevel, color) {
   const scene = new THREE.Scene()
-  scene.background = new THREE.Color(0xffffff)
+  scene.background = new THREE.Color('#ffffff')
 
   const wireMaterial = new THREE.MeshBasicMaterial({
-    color: 0x27081d,
+    color: '#27081d',
     transparent:true,
-    opacity:0.5,
+    opacity: 0.3,
     wireframe: true,
   })
   const solidMaterial = new THREE.MeshPhongMaterial({
-    color: 0xff0000,
+    color,
     side: THREE.DoubleSide,
     shininess: 50,
   })
@@ -135,7 +152,7 @@ function createScene(expr) {
   plotExpr(
     expr,
     new Interval(-5, 5), new Interval(-5, 5), new Interval(-5, 5),
-    10 / (1 << 6),
+    10 / (1 << subdivisionLevel),
     (xi, yi, zi) => {
       for (let geo of marchingCubes(expr, xi, yi, zi)) {
         geometries.push(geo)
@@ -144,12 +161,15 @@ function createScene(expr) {
   )
 
   const mergedGeometry = BufferGeometryUtils.mergeGeometries(geometries)
-  const mesh = new THREE.Mesh(mergedGeometry, solidMaterial)
-  mesh.position.set(0, 0, 0)
-  const mesh2 = new THREE.Mesh(mergedGeometry, wireMaterial)
-  mesh2.position.set(0, 0, 0)
-  scene.add(mesh)
-  scene.add(mesh2)
+  const solidMesh = new THREE.Mesh(mergedGeometry, solidMaterial)
+  solidMesh.position.set(0, 0, 0)
+  scene.add(solidMesh)
+
+  if (showWire) {
+    const wireMesh = new THREE.Mesh(mergedGeometry, wireMaterial)
+    wireMesh.position.set(0, 0, 0)
+    scene.add(wireMesh)
+  }
 
   // AxesHelper：辅助观察的坐标系
   const axesHelper = new THREE.AxesHelper(150)
@@ -169,7 +189,7 @@ function createCamera(width, height) {
   camera.up.set(0, 0, 1)
 
   // 相机光源
-  const light = new THREE.PointLight(0xffffff, 50, 0, 1)
+  const light = new THREE.PointLight('#ffffff', 50, 0, 1)
   light.position.set(0, 0, -1)
   camera.add(light)
 
@@ -194,12 +214,12 @@ onMounted(() => {
 
   const controls = new OrbitControls(camera, renderer.domElement)
   controls.addEventListener('change', function () {
-    renderer.render(scene, camera); //执行渲染操作
+    renderer.render(scene, camera)
   })
   controls.enableDamping = true
 
-  watch(selectedSurfaceIndex, value => {
-    scene = createScene(surfaces[value].expr)
+  watch([selectedSurfaceIndex, showWire, subdivisionLevel, color], () => {
+    scene = createScene(surfaces[selectedSurfaceIndex.value].expr, showWire.value, subdivisionLevel.value, color.value)
     scene.add(camera)
     renderer.render(scene, camera)
   }, {immediate: true})

@@ -335,6 +335,7 @@ function createTriangleGeometry(p1, p2, p3) {
   return geometry
 }
 
+// 对区域[xi, yi, zi]执行Marching Cubes算法，返回生成的三角形面片列表
 export function marchingCubes(expr, xi, yi, zi) {
   // 8个顶点的坐标
   const vertices = [
@@ -387,6 +388,7 @@ export function marchingCubes(expr, xi, yi, zi) {
     return []
   }
 
+  // 使用线性插值计算每个三角形的顶点坐标
   const vertlist = [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
   for (let i = 0; i < 12; i++) {
     if (edgeTable[cubeindex] & (1 << i)) {
@@ -395,14 +397,15 @@ export function marchingCubes(expr, xi, yi, zi) {
     }
   }
 
-  const geos = []
+  // 查表构造三角形面片
+  const triangles = []
   for (let i = 0; triTable[cubeindex][i] !== -1; i += 3) {
-    geos.push(createTriangleGeometry(
+    triangles.push(createTriangleGeometry(
       vertlist[triTable[cubeindex][i]], 
       vertlist[triTable[cubeindex][i + 1]],
       vertlist[triTable[cubeindex][i + 2]]
     ))
   }
 
-  return geos
+  return triangles
 }
